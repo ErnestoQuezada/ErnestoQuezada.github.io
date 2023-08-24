@@ -3,12 +3,34 @@ let convert2usd = document.querySelector('#convert2usd');
 let convert2sats = document.querySelector('#convert2sats');
 let convert2btc = document.querySelector('#convert2btc');
 let convertBtc = document.querySelector('#convertBtc');
+let currentPrice = document.querySelector('#currentPrice');
+
+var btcPrice = 0;
+getDataFromWebSocket();
+
+function getDataFromWebSocket()
+{
+	var socket = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@kline_1m');
+
+	socket.onmessage = function (event)
+	{
+		data = JSON.parse(event.data);
+		btcPrice = (parseInt(data.k.c * 100)/100).toFixed(2);
+		currentPrice.innerHTML = '$' + addCommas(btcPrice);
+	}
+
+	socket.onerror = function (error) 
+	{
+		console.log('Panik station! re-connecting...');
+		socket.close();
+		getDataFromWebSocket();
+	};
+}
 
 convert.addEventListener('click', (e) => 
 {
 	let amount = $("#amount").val() || 0;
 	
-	//todo: add 
 	var btc2usd = amount * btcPrice;
 	var inDollars = (btc2usd).toFixed(2);
 	convertBtc.innerHTML = '$' + addCommas(inDollars);
@@ -24,10 +46,10 @@ convert.addEventListener('click', (e) =>
 	convert2btc.innerHTML = addCommas(usd2btc) + ' btc';
 });
 
-function addCommas(nStr)
+function addCommas(numberAsString)
 {
-    nStr += '';
-    var x = nStr.split('.');
+    numberAsString += '';
+    var x = numberAsString.split('.');
     var x1 = x[0];
     var x2 = x.length > 1 ? '.' + x[1] : '';
     var rgx = /(\d+)(\d{3})/;
